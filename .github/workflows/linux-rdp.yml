@@ -1,23 +1,85 @@
-- name: Install comprehensive Kali tools
-  run: |
-    # نصب tools های امنیتی بیشتر
-    docker run --rm kalilinux/kali-rolling bash -c "
-      apt-get update -y &&
-      apt-get install -y \
-        nmap \
-        sqlmap \
-        metasploit-framework \
-        burpsuite \
-        wireshark \
-        aircrack-ng \
-        john \
-        hashcat \
-        curl \
-        wget \
-        net-tools \
-        dnsutils &&
-      echo '✅ All Kali tools installed!' &&
-      echo '=== Security Tools ===' &&
-      echo 'nmap, sqlmap, metasploit, burpsuite, wireshark'
-      echo 'aircrack-ng, john, hashcat'
-    "
+name: Kali Linux Tools
+on:
+  workflow_dispatch:
+
+jobs:
+  kali-tools:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30  # افزایش زمان اجرا
+    steps:
+    - name: Install Docker
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y docker.io
+
+    - name: Pull Kali Linux image
+      run: |
+        docker pull kalilinux/kali-rolling
+        echo "✅ Kali image downloaded"
+
+    - name: Install basic tools
+      run: |
+        # نصب tools ضروری به صورت جداگانه
+        docker run --rm kalilinux/kali-rolling bash -c "
+          apt-get update -y &&
+          apt-get install -y nmap sqlmap curl wget --no-install-recommends &&
+          echo '✅ Basic tools installed'
+        "
+
+    - name: Install network tools
+      run: |
+        docker run --rm kalilinux/kali-rolling bash -c "
+          apt-get install -y net-tools dnsutils netcat-traditional --no-install-recommends &&
+          echo '✅ Network tools installed'
+        "
+
+    - name: Show available tools
+      run: |
+        echo "=========================================="
+        echo "🎯 KALI LINUX TOOLS READY TO USE!"
+        echo "=========================================="
+        echo "🚀 Basic Tools:"
+        echo "nmap, sqlmap, curl, wget"
+        echo ""
+        echo "🌐 Network Tools:"
+        echo "net-tools, dnsutils, netcat"
+        echo ""
+        echo "🔧 Usage Examples:"
+        echo "docker run --rm kalilinux/kali-rolling nmap -sS google.com"
+        echo "docker run --rm kalilinux/kali-rolling sqlmap --version"
+        echo "docker run --rm kalilinux/kali-rolling curl -I https://google.com"
+        echo "docker run --rm kalilinux/kali-rolling nslookup google.com"
+        echo ""
+        echo "💡 Note: Each tool runs in isolated container"
+        echo "=========================================="
+
+    - name: Run example scans
+      run: |
+        echo "🔧 Running example security scans..."
+        
+        # اسکن پایه
+        echo "1. Nmap ping scan:"
+        docker run --rm kalilinux/kali-rolling nmap -sP 8.8.8.8
+        
+        echo "2. SQLMap version check:"
+        docker run --rm kalilinux/kali-rolling sqlmap --version
+        
+        echo "3. HTTP header test:"
+        docker run --rm kalilinux/kali-rolling curl -I https://google.com
+        
+        echo "4. DNS lookup:"
+        docker run --rm kalilinux/kali-rolling nslookup google.com
+
+    - name: Keep alive for more commands
+      run: |
+        echo "🟢 Kali tools are ready!"
+        echo "💡 You can add more steps to run specific commands"
+        echo "⏰ This workflow will run for 30 minutes"
+        echo ""
+        echo "📋 Example commands to add:"
+        echo "- docker run --rm kalilinux/kali-rolling nmap -sS scanme.nmap.org"
+        echo "- docker run --rm kalilinux/kali-rolling sqlmap --wizard"
+        echo "- docker run --rm kalilinux/kali-rolling curl https://ifconfig.me"
+        
+        # نگه داشتن workflow برای 10 دقیقه
+        sleep 600
