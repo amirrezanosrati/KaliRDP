@@ -1,17 +1,23 @@
-name: Kali Linux Tools
-on:
-  workflow_dispatch:
-
-jobs:
-  kali-tools:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Run Kali Linux Docker
-      run: |
-        # اجرای کالی لینوکس در Docker
-        docker run -it --rm kalilinux/kali-rolling bash -c "
-          apt-get update &&
-          apt-get install -y nmap sqlmap curl wget &&
-          echo '🎯 Kali Linux Tools Ready!' &&
-          bash
-        "
+- name: Install comprehensive Kali tools
+  run: |
+    # نصب tools های امنیتی بیشتر
+    docker run --rm kalilinux/kali-rolling bash -c "
+      apt-get update -y &&
+      apt-get install -y \
+        nmap \
+        sqlmap \
+        metasploit-framework \
+        burpsuite \
+        wireshark \
+        aircrack-ng \
+        john \
+        hashcat \
+        curl \
+        wget \
+        net-tools \
+        dnsutils &&
+      echo '✅ All Kali tools installed!' &&
+      echo '=== Security Tools ===' &&
+      echo 'nmap, sqlmap, metasploit, burpsuite, wireshark'
+      echo 'aircrack-ng, john, hashcat'
+    "
