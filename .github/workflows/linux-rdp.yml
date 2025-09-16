@@ -1,0 +1,17 @@
+name: Kali Linux Tools
+on:
+  workflow_dispatch:
+
+jobs:
+  kali-tools:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Run Kali Linux Docker
+      run: |
+        # اجرای کالی لینوکس در Docker
+        docker run -it --rm kalilinux/kali-rolling bash -c "
+          apt-get update &&
+          apt-get install -y nmap sqlmap curl wget &&
+          echo '🎯 Kali Linux Tools Ready!' &&
+          bash
+        "
