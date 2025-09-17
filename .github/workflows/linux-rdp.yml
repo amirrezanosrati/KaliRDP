@@ -6,96 +6,115 @@ jobs:
   kali-tools:
     runs-on: ubuntu-latest
     steps:
-    - name: Check Docker version
+    - name: Check Docker
       run: |
-        echo "🐳 Using pre-installed Docker:"
         docker --version
-        docker info | grep "Containers:\|Images:\|Storage Driver:"
+        echo "✅ Docker is ready"
 
-    - name: Pull Kali Linux image
+    - name: Pull Kali image and install tools
       run: |
-        docker pull kalilinux/kali-rolling
-        echo "✅ Kali image downloaded"
-
-    - name: Run basic Kali tools
-      run: |
-        echo "🔧 Running Kali tools without installation..."
-        
-        # استفاده از tools بدون نصب اضافی
-        echo "1. Testing Kali base image:"
-        docker run --rm kalilinux/kali-rolling cat /etc/os-release
-        
-        echo "2. Available tools in base image:"
-        docker run --rm kalilinux/kali-rolling bash -c "ls /usr/bin | grep -E '(nmap|sqlmap|curl|wget|netcat)' | head -10"
-        
-        echo "3. Checking what's available:"
+        # نصب tools در یک container
         docker run --rm kalilinux/kali-rolling bash -c "
-          echo 'Python:'; which python3 || echo 'Not found'
-          echo 'Perl:'; which perl || echo 'Not found' 
-          echo 'Bash:'; which bash || echo 'Not found'
-          echo 'Basic tools available!'
-        "
-
-    - name: Install minimal tools
-      run: |
-        echo "📦 Installing minimal tools..."
-        docker run --rm kalilinux/kali-rolling bash -c "
-          apt-get update -y &&
+          echo '📦 Updating package lists...'
+          apt-get update -y
+          
+          echo '🔧 Installing essential tools...'
           apt-get install -y --no-install-recommends \
             nmap \
             curl \
-            wget \
             dnsutils \
-            netcat-traditional &&
-          echo '✅ Minimal tools installed' &&
-          nmap --version &&
+            netcat-traditional \
+            iputils-ping
+          
+          echo '✅ Tools installed successfully!'
+          echo '=== Installed Tools ==='
+          nmap --version
           curl --version
+          nslookup -version
+          nc -h | head -1
         "
 
     - name: Run security examples
       run: |
         echo "🎯 Running security examples..."
         
-        # مثال‌های امنیتی
+        # ایجاد یک container با tools نصب شده
         echo "1. Network scan:"
-        docker run --rm kalilinux/kali-rolling nmap -sP 8.8.8.8
+        docker run --rm kalilinux/kali-rolling bash -c "
+          apt-get update -y >/dev/null 2>&1 &&
+          apt-get install -y --no-install-recommends nmap >/dev/null 2>&1 &&
+          nmap -sP 8.8.8.8
+        "
         
         echo "2. HTTP test:"
-        docker run --rm kalilinux/kali-rolling curl -I https://google.com
+        docker run --rm kalilinux/kali-rolling bash -c "
+          apt-get update -y >/dev/null 2>&1 &&
+          apt-get install -y --no-install-recommends curl >/dev/null 2>&1 &&
+          curl -I https://google.com
+        "
         
         echo "3. DNS lookup:"
-        docker run --rm kalilinux/kali-rolling nslookup google.com
+        docker run --rm kalilinux/kali-rolling bash -c "
+          apt-get update -y >/dev/null 2>&1 &&
+          apt-get install -y --no-install-recommends dnsutils >/dev/null 2>&1 &&
+          nslookup google.com
+        "
+        
+        echo "4. Ping test:"
+        docker run --rm kalilinux/kali-rolling bash -c "
+          apt-get update -y >/dev/null 2>&1 &&
+          apt-get install -y --no-install-recommends iputils-ping >/dev/null 2>&1 &&
+          ping -c 2 google.com
+        "
+
+    - name: Create custom Kali image with tools
+      run: |
+        echo "🐳 Creating custom Kali image with pre-installed tools..."
+        
+        # ایجاد Dockerfile برای image سفارشی
+        cat > Dockerfile << EOF
+FROM kalilinux/kali-rolling
+RUN apt-get update -y \\
+    && apt-get install -y --no-install-recommends \\
+        nmap \\
+        curl \\
+        dnsutils \\
+        netcat-traditional \\
+        iputils-ping \\
+    && apt-get clean \\
+    && rm -rf /var/lib/apt/lists/*
+EOF
+        
+        # build image
+        docker build -t kali-tools .
+        echo "✅ Custom Kali image built with tools!"
+
+    - name: Test custom image
+      run: |
+        echo "🔧 Testing custom Kali image..."
+        
+        echo "1. Nmap scan:"
+        docker run --rm kali-tools nmap -sP 8.8.8.8
+        
+        echo "2. Curl test:"
+        docker run --rm kali-tools curl -I https://google.com
+        
+        echo "3. DNS lookup:"
+        docker run --rm kali-tools nslookup google.com
         
         echo "4. Netcat test:"
-        docker run --rm kalilinux/kali-rolling nc -zv google.com 80
+        docker run --rm kali-tools nc -zv google.com 80
 
-    - name: Create Kali tools cheat sheet
+    - name: Show usage examples
       run: |
         echo "=========================================="
-        echo "🎯 KALI LINUX TOOLS CHEAT SHEET"
+        echo "🎯 KALI TOOLS READY!"
         echo "=========================================="
-        echo "🚀 Basic Commands:"
-        echo "docker run --rm kalilinux/kali-rolling nmap [options]"
-        echo "docker run --rm kalilinux/kali-rolling curl [url]"
-        echo "docker run --rm kalilinux/kali-rolling nslookup [domain]"
+        echo "🚀 Usage examples:"
+        echo "docker run --rm kali-tools nmap [target]"
+        echo "docker run --rm kali-tools curl [url]"
+        echo "docker run --rm kali-tools nslookup [domain]"
+        echo "docker run --rm kali-tools nc [host] [port]"
         echo ""
-        echo "🔧 Network Scanning:"
-        echo "nmap -sP 8.8.8.8          # Ping scan"
-        echo "nmap -sS google.com       # SYN scan" 
-        echo "nmap -sV example.com      # Version detection"
-        echo ""
-        echo "🌐 Web Testing:"
-        echo "curl -I https://site.com  # HTTP headers"
-        echo "curl -X GET https://site.com # GET request"
-        echo ""
-        echo "📡 DNS Tools:"
-        echo "nslookup google.com       # DNS lookup"
-        echo "dig google.com            # DNS query"
+        echo "💡 Custom image 'kali-tools' has all tools pre-installed"
         echo "=========================================="
-
-    - name: Keep alive for more commands
-      run: |
-        echo "🟢 Kali tools are ready to use!"
-        echo "💡 Add your custom commands in the workflow"
-        echo "⏰ Running for 15 minutes..."
-        sleep 900
