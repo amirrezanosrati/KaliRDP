@@ -1,98 +1,101 @@
-name: Linux GUI Desktop
+name: Ubuntu Desktop RDP
 on:
   workflow_dispatch:
 
 jobs:
-  linux-gui:
+  ubuntu-desktop:
     runs-on: ubuntu-latest
     steps:
-    - name: Install XFCE Desktop
+    - name: Install Ubuntu Desktop
       run: |
-        # نصب محیط دسکتاپ XFCE (سبک و موجود در Ubuntu)
         sudo apt-get update
-        sudo apt-get install -y \
-          xfce4 \
-          xfce4-goodies \
+        # نصب محیط دسکتاپ Ubuntu استاندارد
+        sudo apt-get install -y --no-install-recommends \
+          ubuntu-desktop-minimal \
           xrdp \
           firefox \
-          gnome-terminal
+          gnome-terminal \
+          nautilus
         
-        # تنظیم رمز عبور برای کاربر Ubuntu
-        echo "ubuntu:UbuntuPass123!" | sudo chpasswd
+        # ایجاد کاربر جدید
+        sudo useradd -m -s /bin/bash ubuntu-user
+        echo "ubuntu-user:UserPass123!" | sudo chpasswd
+        sudo usermod -aG sudo ubuntu-user
         
-        # تنظیم XRDP برای XFCE
-        echo "xfce4-session" > ~/.xsession
-        sudo sed -i 's/port=3389/port=3390/g' /etc/xrdp/xrdp.ini
+        # تنظیم XRDP برای GNOME
+        echo "gnome-session" > /home/ubuntu-user/.xsession
+        sudo chown ubuntu-user:ubuntu-user /home/ubuntu-user/.xsession
+        
+        # راه اندازی سرویس
         sudo service xrdp restart
+        sleep 5
 
     - name: Setup Ngrok for RDP
       run: |
-        # دانلود و تنظیم Ngrok
         wget -q https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
         tar -xzf ngrok-v3-stable-linux-amd64.tgz
         chmod +x ngrok
         
         ./ngrok authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
-        
-        # ایجاد تونل برای RDP
-        ./ngrok tcp 3390 --log=stdout > ngrok.log 2>&1 &
+        ./ngrok tcp 3389 --log=stdout > ngrok.log 2>&1 &
         sleep 20
 
-    - name: Get RDP Connection Info
+    - name: Get Connection Info
       run: |
         # دریافت اطلاعات تونل
-        RDP_TUNNEL=$(curl -s http://localhost:4040/api/tunnels | grep -o 'tcp://[^"]*' | head -1)
-        
-        if [ -n "$RDP_TUNNEL" ]; then
-            RDP_IP=$(echo "$RDP_TUNNEL" | cut -d':' -f2 | sed 's#//##')
-            RDP_PORT=$(echo "$RDP_TUNNEL" | cut -d':' -f3)
+        TUNNEL_INFO=$(curl -s http://localhost:4040/api/tunnels | grep -o 'tcp://[^"]*' | head -1)
+        if [ -n "$TUNNEL_INFO" ]; then
+            RDP_IP=$(echo "$TUNNEL_INFO" | cut -d':' -f2 | sed 's#//##')
+            RDP_PORT=$(echo "$TUNNEL_INFO" | cut -d':' -f3)
         else
             RDP_IP="0.tcp.ngrok.io"
-            RDP_PORT="3390"
+            RDP_PORT="3389"
         fi
         
         echo "RDP_IP=$RDP_IP" >> $GITHUB_ENV
         echo "RDP_PORT=$RDP_PORT" >> $GITHUB_ENV
 
-    - name: Display RDP Connection Details
+    - name: Display Connection Details
       run: |
         echo "=========================================="
-        echo "🎯 LINUX GUI DESKTOP READY!"
+        echo "🎯 UBUNTU DESKTOP READY!"
         echo "=========================================="
         echo "🌐 RDP Address: ${{ env.RDP_IP }}"
         echo "🔌 RDP Port: ${{ env.RDP_PORT }}"
-        echo "👤 Username: ubuntu"
-        echo "🔑 Password: UbuntuPass123!"
+        echo "👤 Username: ubuntu-user"
+        echo "🔑 Password: UserPass123!"
         echo ""
-        echo "💻 Desktop Environment: XFCE"
-        echo "🖥️ Includes: Firefox, Terminal"
+        echo "💻 Includes:"
+        echo "• GNOME Desktop"
+        echo "• Firefox Browser"
+        echo "• Terminal"
+        echo "• File Manager"
         echo ""
-        echo "📱 Connect with:"
-        echo "• Windows: Remote Desktop Connection"
-        echo "• Android: Microsoft Remote Desktop"
-        echo "• Mac: Microsoft Remote Desktop"
+        echo "🚀 Connect with Remote Desktop Client"
         echo "=========================================="
 
-    - name: Install additional tools
+    - name: Install additional software
       run: |
-        # نصب ابزارهای اضافی
+        # نصب نرم افزارهای اضافی
         sudo apt-get install -y \
           vim \
           git \
           curl \
           wget \
           htop \
-          filezilla
+          gedit \
+          libreoffice-writer
         
-        echo "✅ Additional tools installed!"
+        echo "✅ Additional software installed!"
 
-    - name: Keep RDP alive
+    - name: Keep alive
       run: |
-        echo "🟢 GUI Desktop is running..."
-        echo "🖥️ XFCE Desktop with Firefox and Terminal"
-        echo "💡 Connect using the information above"
+        echo "🟢 Ubuntu Desktop is running..."
+        echo "🖥️ Full GNOME desktop environment"
+        echo "⏰ Connected time: $(date)"
         echo ""
+        # نمایش آدرس اتصال هر 30 ثانیه
         while true; do
-            echo "✅ RDP Active - $(date +'%H:%M:%S')"
-            sleep 60
+            echo "📍 Connect to: ${{ env.RDP_IP }}:${{ env.RDP_PORT }}"
+            sleep 30
         done
