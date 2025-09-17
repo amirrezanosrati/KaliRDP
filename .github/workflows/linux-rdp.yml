@@ -1,85 +1,12 @@
-name: Security Tools Runner
-on:
-  workflow_dispatch:
-
-jobs:
-  security-tools:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Install tools directly on Ubuntu
-      run: |
-        sudo apt-get update
-        # نصب مستقیم ابزارها روی Ubuntu (بدون Docker)
-        sudo apt-get install -y \
-          nmap \
-          curl \
-          wget \
-          dnsutils \
-          netcat \
-          iputils-ping \
-          python3 \
-          python3-pip \
-          git
-        
-        echo "✅ All security tools installed directly!"
-
-    - name: Run security tools examples
-      run: |
-        echo "🎯 RUNNING SECURITY TOOLS NATIVELY"
-        echo "=========================================="
-        
-        echo "1. 🔍 Nmap network scan:"
-        nmap -sP 8.8.8.8
-        
-        echo "2. 🌐 HTTP header test:"
-        curl -I https://google.com
-        
-        echo "3. 📡 DNS lookup:"
-        nslookup google.com
-        
-        echo "4. 📶 Ping test:"
-        ping -c 2 google.com
-        
-        echo "5. 🔌 Netcat connection test:"
-        nc -zv google.com 80
-        
-        echo "6. 🐍 Python version:"
-        python3 --version
-
-    - name: Install additional security tools via pip
-      run: |
-        echo "📦 Installing Python security tools..."
-        pip3 install \
-          requests \
-          beautifulsoup4 \
-          scapy \
-          paramiko
-        
-        echo "✅ Python security tools installed!"
-
-    - name: Create security tools cheat sheet
-      run: |
-        echo "=========================================="
-        echo "🛡️  SECURITY TOOLS CHEAT SHEET"
-        echo "=========================================="
-        echo "🔧 Installed Tools:"
-        echo "• nmap - Network scanning"
-        echo "• curl - Web requests"
-        echo "• netcat - Network utility"
-        echo "• nslookup - DNS queries"
-        echo "• python3 - Programming"
-        echo "• git - Version control"
-        echo ""
-        echo "🚀 Example Commands:"
-        echo "nmap -sS scanme.nmap.org"
-        echo "curl -X GET https://example.com"
-        echo "nslookup google.com"
-        echo "python3 -c 'import requests; print(requests.get(\"https://google.com\").status_code)'"
-        echo "=========================================="
-
-    - name: Keep session alive
-      run: |
-        echo "🟢 Security tools are ready and working!"
-        echo "💻 You can add more commands to this workflow"
-        echo "⏰ Running for 10 minutes..."
-        sleep 600
+- name: Use pre-built security images
+  run: |
+    echo "🐳 Using pre-built Docker images..."
+    
+    # Nmap از پیش ساخته شده
+    docker run --rm instrumentisto/nmap nmap -sP 8.8.8.8
+    
+    # curl از پیش ساخته شده
+    docker run --rm curlimages/curl curl -I https://google.com
+    
+    # DNS tools از پیش ساخته شده
+    docker run --rm appropriate/nslookup nslookup google.com
