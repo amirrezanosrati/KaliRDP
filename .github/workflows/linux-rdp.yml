@@ -1,12 +1,29 @@
-- name: Use pre-built security images
-  run: |
-    echo "🐳 Using pre-built Docker images..."
-    
-    # Nmap از پیش ساخته شده
-    docker run --rm instrumentisto/nmap nmap -sP 8.8.8.8
-    
-    # curl از پیش ساخته شده
-    docker run --rm curlimages/curl curl -I https://google.com
-    
-    # DNS tools از پیش ساخته شده
-    docker run --rm appropriate/nslookup nslookup google.com
+name: Kali Linux GUI
+on:
+  workflow_dispatch:
+
+jobs:
+  kali-gui:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install Kali Desktop
+      run: |
+        # نصب محیط دسکتاپ کالی
+        sudo apt-get update
+        sudo apt-get install -y \
+          kali-desktop-xfce \
+          xrdp \
+          tightvncserver
+        
+        # تنظیم رمز عبور
+        echo "kali:KaliPass123!" | sudo chpasswd
+        sudo service xrdp start
+
+    - name: Setup Ngrok for RDP
+      run: |
+        wget -q https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.tgz
+        tar -xzf ngrok-v3-stable-linux-amd64.tgz
+        chmod +x ngrok
+        ./ngrok authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+        ./ngrok tcp 3389 --log=stdout &
+        sleep 20
