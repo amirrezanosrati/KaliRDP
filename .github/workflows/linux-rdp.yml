@@ -1,120 +1,85 @@
-name: Kali Linux Tools
+name: Security Tools Runner
 on:
   workflow_dispatch:
 
 jobs:
-  kali-tools:
+  security-tools:
     runs-on: ubuntu-latest
     steps:
-    - name: Check Docker
+    - name: Install tools directly on Ubuntu
       run: |
-        docker --version
-        echo "✅ Docker is ready"
+        sudo apt-get update
+        # نصب مستقیم ابزارها روی Ubuntu (بدون Docker)
+        sudo apt-get install -y \
+          nmap \
+          curl \
+          wget \
+          dnsutils \
+          netcat \
+          iputils-ping \
+          python3 \
+          python3-pip \
+          git
+        
+        echo "✅ All security tools installed directly!"
 
-    - name: Pull Kali image and install tools
+    - name: Run security tools examples
       run: |
-        # نصب tools در یک container
-        docker run --rm kalilinux/kali-rolling bash -c "
-          echo '📦 Updating package lists...'
-          apt-get update -y
-          
-          echo '🔧 Installing essential tools...'
-          apt-get install -y --no-install-recommends \
-            nmap \
-            curl \
-            dnsutils \
-            netcat-traditional \
-            iputils-ping
-          
-          echo '✅ Tools installed successfully!'
-          echo '=== Installed Tools ==='
-          nmap --version
-          curl --version
-          nslookup -version
-          nc -h | head -1
-        "
+        echo "🎯 RUNNING SECURITY TOOLS NATIVELY"
+        echo "=========================================="
+        
+        echo "1. 🔍 Nmap network scan:"
+        nmap -sP 8.8.8.8
+        
+        echo "2. 🌐 HTTP header test:"
+        curl -I https://google.com
+        
+        echo "3. 📡 DNS lookup:"
+        nslookup google.com
+        
+        echo "4. 📶 Ping test:"
+        ping -c 2 google.com
+        
+        echo "5. 🔌 Netcat connection test:"
+        nc -zv google.com 80
+        
+        echo "6. 🐍 Python version:"
+        python3 --version
 
-    - name: Run security examples
+    - name: Install additional security tools via pip
       run: |
-        echo "🎯 Running security examples..."
+        echo "📦 Installing Python security tools..."
+        pip3 install \
+          requests \
+          beautifulsoup4 \
+          scapy \
+          paramiko
         
-        # ایجاد یک container با tools نصب شده
-        echo "1. Network scan:"
-        docker run --rm kalilinux/kali-rolling bash -c "
-          apt-get update -y >/dev/null 2>&1 &&
-          apt-get install -y --no-install-recommends nmap >/dev/null 2>&1 &&
-          nmap -sP 8.8.8.8
-        "
-        
-        echo "2. HTTP test:"
-        docker run --rm kalilinux/kali-rolling bash -c "
-          apt-get update -y >/dev/null 2>&1 &&
-          apt-get install -y --no-install-recommends curl >/dev/null 2>&1 &&
-          curl -I https://google.com
-        "
-        
-        echo "3. DNS lookup:"
-        docker run --rm kalilinux/kali-rolling bash -c "
-          apt-get update -y >/dev/null 2>&1 &&
-          apt-get install -y --no-install-recommends dnsutils >/dev/null 2>&1 &&
-          nslookup google.com
-        "
-        
-        echo "4. Ping test:"
-        docker run --rm kalilinux/kali-rolling bash -c "
-          apt-get update -y >/dev/null 2>&1 &&
-          apt-get install -y --no-install-recommends iputils-ping >/dev/null 2>&1 &&
-          ping -c 2 google.com
-        "
+        echo "✅ Python security tools installed!"
 
-    - name: Create custom Kali image with tools
-      run: |
-        echo "🐳 Creating custom Kali image with pre-installed tools..."
-        
-        # ایجاد Dockerfile برای image سفارشی
-        cat > Dockerfile << EOF
-FROM kalilinux/kali-rolling
-RUN apt-get update -y \\
-    && apt-get install -y --no-install-recommends \\
-        nmap \\
-        curl \\
-        dnsutils \\
-        netcat-traditional \\
-        iputils-ping \\
-    && apt-get clean \\
-    && rm -rf /var/lib/apt/lists/*
-EOF
-        
-        # build image
-        docker build -t kali-tools .
-        echo "✅ Custom Kali image built with tools!"
-
-    - name: Test custom image
-      run: |
-        echo "🔧 Testing custom Kali image..."
-        
-        echo "1. Nmap scan:"
-        docker run --rm kali-tools nmap -sP 8.8.8.8
-        
-        echo "2. Curl test:"
-        docker run --rm kali-tools curl -I https://google.com
-        
-        echo "3. DNS lookup:"
-        docker run --rm kali-tools nslookup google.com
-        
-        echo "4. Netcat test:"
-        docker run --rm kali-tools nc -zv google.com 80
-
-    - name: Show usage examples
+    - name: Create security tools cheat sheet
       run: |
         echo "=========================================="
-        echo "🎯 KALI TOOLS READY!"
+        echo "🛡️  SECURITY TOOLS CHEAT SHEET"
         echo "=========================================="
-        echo "🚀 Usage examples:"
-        echo "docker run --rm kali-tools nmap [target]"
-        echo "docker run --rm kali-tools curl [url]"
-        echo "docker run --rm kali-tools nslookup [domain]"
-        echo "docker run --rm kali-tools nc [host] [port]"
+        echo "🔧 Installed Tools:"
+        echo "• nmap - Network scanning"
+        echo "• curl - Web requests"
+        echo "• netcat - Network utility"
+        echo "• nslookup - DNS queries"
+        echo "• python3 - Programming"
+        echo "• git - Version control"
         echo ""
-        echo "💡 Custom image 'kali-tools' has all tools pre-installed"
+        echo "🚀 Example Commands:"
+        echo "nmap -sS scanme.nmap.org"
+        echo "curl -X GET https://example.com"
+        echo "nslookup google.com"
+        echo "python3 -c 'import requests; print(requests.get(\"https://google.com\").status_code)'"
         echo "=========================================="
+
+    - name: Keep session alive
+      run: |
+        echo "🟢 Security tools are ready and working!"
+        echo "💻 You can add more commands to this workflow"
+        echo "⏰ Running for 10 minutes..."
+        sleep 600
